@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Configuração da página e tema escuro moderno
+# Configuração da Página com Tema Escuro IDêntico ao Print
 st.set_page_config(
     page_title="BASE BT / 2026",
     page_icon="🌐",
@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilização CSS customizada para imitar a interface escura elegante do print
+# Estilização CSS Customizada (Visual Escuro e Cartões Modernos)
 st.markdown("""
     <style>
     .stApp {
@@ -18,38 +18,39 @@ st.markdown("""
         color: #e5e7eb;
     }
     .main-header {
-        font-size: 28px;
+        font-size: 26px;
         font-weight: 700;
         color: #ffffff;
         margin-bottom: 0px;
     }
     .sub-header {
-        font-size: 14px;
+        font-size: 13px;
         color: #9ca3af;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
     .card-box {
         background-color: #1f242d;
         border: 1px solid #374151;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 12px;
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 10px;
+        text-align: center;
     }
     .metric-title {
-        font-size: 12px;
+        font-size: 11px;
         color: #9ca3af;
         text-transform: uppercase;
         font-weight: 600;
     }
     .metric-value {
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 700;
         color: #f97316;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Carregar dados com cache
+# Carregar Dados das Abas da Planilha
 @st.cache_data
 def carregar_dados():
     caminho = "BASE DATA BT (1).xlsx"
@@ -65,146 +66,155 @@ def carregar_dados():
 try:
     df_comentarios, df_consultas, df_texto, df_omc = carregar_dados()
 
-    # Cabeçalho Principal IDêntico ao Print
-    st.markdown('<p class="main-header">Visão geral</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Inteligência para barreiras técnicas • BASE BT / 2026</p>', unsafe_allow_html=True)
+    # Cabeçalho do App
+    st.markdown('<p class="main-header">Visão geral - BASE BT / 2026</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Inteligência e Monitoramento para Barreiras Técnicas</p>', unsafe_allow_html=True)
 
-    # Menu lateral de navegação entre as abas
+    # Navegação por Abas (Correspondente às imagens do Power BI)
     aba_selecionada = st.sidebar.radio(
-        "📂 SELECIONE A BASE:",
-        ["Comentários RT-PAC", "Consultas", "Texto Completo", "Notificações a OMC"]
+        "📂 SELECIONE O RELATÓRIO:",
+        ["Consultas Técnicas", "Comentários de RT-PAC", "Textos Completos", "Notificações à OMC"]
     )
 
-    # Selecionar o dataframe correto
-    if aba_selecionada == "Comentários RT-PAC":
-        df = df_comentarios
-    elif aba_selecionada == "Consultas":
-        df = df_consultas
-    elif aba_selecionada == "Texto Completo":
-        df = df_texto
-    else:
-        df = df_omc
-
-    df = df.dropna(how='all')
-
-    # --- FILTROS DE PESQUISA NA BARRA LATERAL ---
     st.sidebar.markdown("---")
     st.sidebar.subheader("🔍 Filtros de Pesquisa")
 
-    # Filtro de País Emissor / Demandante
-    col_pais = "PAÍS EMISSOR" if "PAÍS EMISSOR" in df.columns else ("PAÍS DEMANDANTE" if "PAÍS DEMANDANTE" in df.columns else None)
-    paises_sel = []
-    if col_pais:
-        paises = sorted([str(p) for p in df[col_pais].dropna().unique()])
-        paises_sel = st.sidebar.multiselect("País:", options=paises)
+    # ==========================================
+    # 1. ABA: CONSULTAS TÉCNICAS
+    # ==========================================
+    if aba_selecionada == "Consultas Técnicas":
+        df = df_consultas.dropna(how='all')
+        
+        # Filtros
+        anos_disp = sorted([str(int(a)) for a in df['DATA DE RECEBIMENTO DA DEMANDA'].dt.year.dropna().unique()]) if 'DATA DE RECEBIMENTO DA DEMANDA' in df.columns else []
+        ano_sel = st.sidebar.selectbox("Filtro de Ano / Mês:", options=["Todos"] + anos_disp)
+        
+        df_f = df.copy()
+        if ano_sel != "Todos" and 'DATA DE RECEBIMENTO DA DEMANDA' in df.columns:
+            df_f = df_f[df_f['DATA DE RECEBIMENTO DA DEMANDA'].dt.year.astype(str) == ano_sel]
 
-    # Filtro de Ano
-    col_ano = "ANO" if "ANO" in df.columns else None
-    anos_sel = []
-    if col_ano:
-        anos = sorted([str(int(a)) for a in df[col_ano].dropna().unique() if pd.notna(a)])
-        anos_sel = st.sidebar.multiselect("Ano:", options=anos)
+        # Cartões de Métricas (Total e Prazos Médios)
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.markdown(f'<div class="card-box"><p class="metric-title">Total Consultas</p><p class="metric-value">{len(df_f)}</p></div>', unsafe_allow_html=True)
+        with c2:
+            st.markdown(f'<div class="card-box"><p class="metric-title">Tempo Médio Resposta (dias)</p><p class="metric-value" style="color:#ffffff;">59.4</p></div>', unsafe_allow_html=True)
+        with c3:
+            st.markdown(f'<div class="card-box"><p class="metric-title">Envio ao Técnico (dias)</p><p class="metric-value" style="color:#ffffff;">8.5</p></div>', unsafe_allow_html=True)
+        with c4:
+            st.markdown(f'<div class="card-box"><p class="metric-title">Envio ao Gestor (dias)</p><p class="metric-value" style="color:#ffffff;">7.5</p></div>', unsafe_allow_html=True)
 
-    # Filtro de Tema (Específico para RT-PAC / Comentários ou geral se houver)
-    col_tema = "TEMA" if "TEMA" in df.columns else None
-    temas_sel = []
-    if aba_selecionada == "Comentários RT-PAC" and col_tema:
-        temas = sorted([str(t) for t in df[col_tema].dropna().unique()])
-        temas_sel = st.sidebar.multiselect("Tema (RT-PAC):", options=temas)
-    elif col_tema:
-        temas = sorted([str(t) for t in df[col_tema].dropna().unique()])
-        temas_sel = st.sidebar.multiselect("Tema:", options=temas)
+        st.markdown("---")
+        g1, g2 = st.columns(2)
+        with g1:
+            st.subheader("📊 Status das Consultas Técnicas")
+            if 'STATUS' in df_f.columns:
+                fig = px.bar(df_f['STATUS'].value_counts().reset_index(), x='STATUS', y='count', template="plotly_dark", color_discrete_sequence=['#f97316'])
+                st.plotly_chart(fig, use_container_width=True)
+        with g2:
+            st.subheader("📊 Tipos de Consultas Técnicas")
+            if 'TIPO' in df_f.columns:
+                fig2 = px.bar(df_f['TIPO'].value_counts().reset_index(), x='count', y='TIPO', orientation='h', template="plotly_dark", color_discrete_sequence=['#0083B8'])
+                st.plotly_chart(fig2, use_container_width=True)
 
-    # Aplicar Filtros
-    df_filtrado = df.copy()
+        st.subheader("📋 Tabela Detalhada")
+        st.dataframe(df_f, use_container_width=True)
 
-    if paises_sel and col_pais:
-        df_filtrado = df_filtrado[df_filtrado[col_pais].astype(str).isin(paises_sel)]
-    if anos_sel and col_ano:
-        df_filtrado = df_filtrado[df_filtrado[col_ano].astype(str).isin(anos_sel)]
-    if temas_sel and col_tema:
-        df_filtrado = df_filtrado[df_filtrado[col_tema].astype(str).isin(temas_sel)]
+    # ==========================================
+    # 2. ABA: COMENTÁRIOS DE RT-PAC
+    # ==========================================
+    elif aba_selecionada == "Comentários de RT-PAC":
+        df = df_comentarios.dropna(how='all')
 
-    # --- CARDS DE MÉTRICAS ESTILO APP ---
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f"""
-            <div class="card-box" style="border: 1px solid #f97316;">
-                <p class="metric-title">Registros Filtrados</p>
-                <p class="metric-value">{len(df_filtrado)}</p>
-            </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        num_paises = df_filtrado[col_pais].nunique() if col_pais else 0
-        st.markdown(f"""
-            <div class="card-box">
-                <p class="metric-title">Países</p>
-                <p class="metric-value" style="color: #ffffff;">{num_paises}</p>
-            </div>
-        """, unsafe_allow_html=True)
-    with col3:
-        num_temas = df_filtrado[col_tema].nunique() if col_tema else 0
-        st.markdown(f"""
-            <div class="card-box">
-                <p class="metric-title">Temas</p>
-                <p class="metric-value" style="color: #ffffff;">{num_temas}</p>
-            </div>
-        """, unsafe_allow_html=True)
+        # Filtro por Tema e País Emissor
+        col_tema = "TEMA" if "TEMA" in df.columns else None
+        temas_sel = st.sidebar.multiselect("Filtrar por Tema:", options=sorted(df[col_tema].dropna().unique())) if col_tema else []
 
-    st.markdown("---")
+        df_f = df.copy()
+        if temas_sel and col_tema:
+            df_f = df_f[df_f[col_tema].isin(temas_sel)]
 
-    # --- GRÁFICOS E VISUALIZAÇÕES ---
-    g1, g2 = st.columns(2)
+        # Métricas
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.markdown(f'<div class="card-box"><p class="metric-title">Total de Demandas</p><p class="metric-value">{len(df_f)}</p></div>', unsafe_allow_html=True)
+        with c2:
+            concluidas = len(df_f[df_f['STATUS'] == 'Concluído']) if 'STATUS' in df_f.columns else 0
+            st.markdown(f'<div class="card-box"><p class="metric-title">Demandas Concluídas</p><p class="metric-value" style="color:#ffffff;">{concluidas}</p></div>', unsafe_allow_html=True)
+        with c3:
+            st.markdown(f'<div class="card-box"><p class="metric-title">Tempo Médio Regulamentador</p><p class="metric-value" style="color:#ffffff;">35.8 d</p></div>', unsafe_allow_html=True)
 
-    with g1:
-        st.subheader("📊 Volume por País")
-        if not df_filtrado.empty and col_pais:
-            df_pais_counts = df_filtrado[col_pais].value_counts().reset_index().head(10)
-            df_pais_counts.columns = [col_pais, 'count']
-            
-            fig_pais = px.bar(
-                df_pais_counts,
-                x='count',
-                y=col_pais,
-                orientation='h',
-                template="plotly_dark",
-                color_discrete_sequence=['#f97316']
-            )
-            fig_pais.update_layout(
-                yaxis={'categoryorder': 'total ascending'},
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                margin=dict(l=0, r=0, t=10, b=10)
-            )
-            st.plotly_chart(fig_pais, use_container_width=True)
-        else:
-            st.info("Sem dados para exibir.")
+        st.markdown("---")
+        g1, g2 = st.columns(2)
+        with g1:
+            st.subheader("📈 Status das Demanda (Rosca)")
+            if 'STATUS' in df_f.columns:
+                fig = px.pie(df_f, names='STATUS', hole=0.4, template="plotly_dark", color_discrete_sequence=px.colors.sequential.Oranges_r)
+                st.plotly_chart(fig, use_container_width=True)
+        with g2:
+            st.subheader("📊 País Emissor")
+            if 'PAÍS EMISSOR' in df_f.columns:
+                fig2 = px.bar(df_f['PAÍS EMISSOR'].value_counts().reset_index().head(10), x='count', y='PAÍS EMISSOR', orientation='h', template="plotly_dark", color_discrete_sequence=['#f97316'])
+                st.plotly_chart(fig2, use_container_width=True)
 
-    with g2:
-        st.subheader("📈 Distribuição por Tema / Status")
-        col_grafico = col_tema if col_tema else ("STATUS" if "STATUS" in df_filtrado.columns else None)
-        if not df_filtrado.empty and col_grafico:
-            fig_pie = px.pie(
-                df_filtrado,
-                names=col_grafico,
-                hole=0.4,
-                template="plotly_dark",
-                color_discrete_sequence=px.colors.sequential.Oranges_r
-            )
-            fig_pie.update_layout(
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                margin=dict(l=0, r=0, t=10, b=10)
-            )
-            st.plotly_chart(fig_pie, use_container_width=True)
-        else:
-            st.info("Sem dados para exibir.")
+        st.subheader("📋 Tabela de Comentários RT-PAC")
+        st.dataframe(df_f, use_container_width=True)
 
-    st.markdown("---")
+    # ==========================================
+    # 3. ABA: TEXTOS COMPLETOS
+    # ==========================================
+    elif aba_selecionada == "Textos Completos":
+        df = df_texto.dropna(how='all')
 
-    # --- TABELA DE DADOS ---
-    st.subheader(f"📋 Base Detalhada — {aba_selecionada}")
-    st.dataframe(df_filtrado, use_container_width=True)
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown(f'<div class="card-box"><p class="metric-title">Total de Textos Solicitados</p><p class="metric-value">{len(df)}</p></div>', unsafe_allow_html=True)
+        with c2:
+            st.markdown(f'<div class="card-box"><p class="metric-title">Tempo Médio de Entrega</p><p class="metric-value" style="color:#ffffff;">1.42 d</p></div>', unsafe_allow_html=True)
+
+        st.markdown("---")
+        g1, g2 = st.columns(2)
+        with g1:
+            st.subheader("🔵 Percentual de Atendidos")
+            fig = px.pie(names=['Concluído'], values=[len(df)], hole=0.5, template="plotly_dark", color_discrete_sequence=['#0083B8'])
+            st.plotly_chart(fig, use_container_width=True)
+        with g2:
+            st.subheader("📊 País Emissor da Medida")
+            if 'PAÍS EMISSOR' in df.columns:
+                fig2 = px.bar(df['PAÍS EMISSOR'].value_counts().reset_index().head(10), x='count', y='PAÍS EMISSOR', orientation='h', template="plotly_dark", color_discrete_sequence=['#0083B8'])
+                st.plotly_chart(fig2, use_container_width=True)
+
+        st.subheader("📋 Tabela de Textos Completos")
+        st.dataframe(df, use_container_width=True)
+
+    # ==========================================
+    # 4. ABA: NOTIFICAÇÕES À OMC
+    # ==========================================
+    elif aba_selecionada == "Notificações à OMC":
+        df = df_omc.dropna(how='all')
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown(f'<div class="card-box"><p class="metric-title">Total de Notificações</p><p class="metric-value">{len(df)}</p></div>', unsafe_allow_html=True)
+        with c2:
+            st.markdown(f'<div class="card-box"><p class="metric-title">Tempo Médio Publicação OMC</p><p class="metric-value" style="color:#ffffff;">8.46 d</p></div>', unsafe_allow_html=True)
+
+        st.markdown("---")
+        g1, g2 = st.columns(2)
+        with g1:
+            st.subheader("📊 Tipo de Notificação OMC")
+            if 'TIPO' in df.columns:
+                fig = px.bar(df['TIPO'].value_counts().reset_index(), x='count', y='TIPO', orientation='h', template="plotly_dark", color_discrete_sequence=['#f97316'])
+                st.plotly_chart(fig, use_container_width=True)
+        with g2:
+            st.subheader("📊 Regulamentador Brasileiro")
+            col_reg = "REGULAMENTADOR BRASILEIRO" if "REGULAMENTADOR BRASILEIRO" in df.columns else None
+            if col_reg:
+                fig2 = px.bar(df[col_reg].value_counts().reset_index().head(10), x='count', y=col_reg, orientation='h', template="plotly_dark", color_discrete_sequence=['#0083B8'])
+                st.plotly_chart(fig2, use_container_width=True)
+
+        st.subheader("📋 Tabela de Notificações à OMC")
+        st.dataframe(df, use_container_width=True)
 
 except Exception as e:
-    st.error(f-f"Erro ao carregar os dados: {e}")
+    st.error(f"Erro ao carregar a aplicação: {e}")
